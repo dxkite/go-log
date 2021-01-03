@@ -10,18 +10,18 @@ import (
 	"time"
 )
 
-type Application string
+type Group string
 
 const Version1 = 1
 const TimeBinary = /*version*/ 1 + /*sec*/ 8 + /*nsec*/ 4 + /*zone offset*/ 2
 
 type LogMessage struct {
-	Level   LogLevel    `json:"level"`
-	App     Application `json:"app"`
-	Time    time.Time   `json:"time"`
-	File    string      `json:"file"`
-	Line    int         `json:"line"`
-	Message string      `json:"message"`
+	Level   LogLevel  `json:"level"`
+	Group   Group     `json:"group"`
+	Time    time.Time `json:"time"`
+	File    string    `json:"file"`
+	Line    int       `json:"line"`
+	Message string    `json:"message"`
 }
 
 type LogMessageWriter interface {
@@ -58,8 +58,8 @@ func (l *Logger) SetLogCaller(b bool) {
 	l.caller = b
 }
 
-func (l *Logger) split(args []interface{}) (Application, LogLevel, []interface{}) {
-	var app Application
+func (l *Logger) split(args []interface{}) (Group, LogLevel, []interface{}) {
+	var app Group
 	level := Linfo
 	for i := 0; i < 2; i++ {
 		if len(args) > 1 {
@@ -67,7 +67,7 @@ func (l *Logger) split(args []interface{}) (Application, LogLevel, []interface{}
 				level = vv
 				args = args[1:]
 			}
-			if vv, ok := args[0].(Application); ok {
+			if vv, ok := args[0].(Group); ok {
 				app = vv
 				args = args[1:]
 			}
@@ -77,9 +77,9 @@ func (l *Logger) split(args []interface{}) (Application, LogLevel, []interface{}
 }
 
 func (l *Logger) levelOutput(level LogLevel, args []interface{}) error {
-	var app Application
+	var app Group
 	if len(args) > 1 {
-		if vv, ok := args[0].(Application); ok {
+		if vv, ok := args[0].(Group); ok {
 			app = vv
 			args = args[1:]
 		}
@@ -103,10 +103,10 @@ func (l *Logger) Debug(args ...interface{}) {
 }
 
 func (l *Logger) Println(args ...interface{}) {
-	var app Application
+	var group Group
 	var level LogLevel
-	app, level, args = l.split(args)
-	_ = l.Output(2, app, level, fmt.Sprintln(args...))
+	group, level, args = l.split(args)
+	_ = l.Output(2, group, level, fmt.Sprintln(args...))
 }
 
 func (l *Logger) Fatalln(args ...interface{}) {
@@ -114,7 +114,7 @@ func (l *Logger) Fatalln(args ...interface{}) {
 	os.Exit(1)
 }
 
-func (l *Logger) Output(calldepth int, app Application, level LogLevel, s string) error {
+func (l *Logger) Output(calldepth int, group Group, level LogLevel, s string) error {
 	now := time.Now()
 	var file string
 	var line int
@@ -132,7 +132,7 @@ func (l *Logger) Output(calldepth int, app Application, level LogLevel, s string
 	}
 	msg := &LogMessage{
 		Level:   level,
-		App:     app,
+		Group:   group,
 		Time:    now,
 		File:    file,
 		Line:    line,
@@ -146,7 +146,7 @@ func (l *Logger) Output(calldepth int, app Application, level LogLevel, s string
 }
 
 func (m *LogMessage) marshal() []byte {
-	buf := []byte{Version1, byte(m.Level), byte(len(m.App))}
+	buf := []byte{Version1, byte(m.Level), byte(len(m.Group))}
 
 	tm, _ := m.Time.MarshalBinary()
 	buf = append(buf, tm...)
@@ -161,7 +161,7 @@ func (m *LogMessage) marshal() []byte {
 	binary.BigEndian.PutUint32(bt[:], uint32(len(m.Message)))
 	buf = append(buf, bt[:]...)
 
-	buf = append(buf, m.App...)
+	buf = append(buf, m.Group...)
 	buf = append(buf, m.File...)
 	buf = append(buf, m.Message...)
 	return buf
@@ -201,7 +201,7 @@ func (m *LogMessage) unmarshal(r io.Reader) error {
 	if _, er := io.ReadFull(r, txt); er != nil {
 		return er
 	}
-	m.App = Application(txt[:al])
+	m.Group = Group(txt[:al])
 	m.File = string(txt[al : uint16(al)+fl])
 	m.Message = string(txt[uint16(al)+fl:])
 	return nil
@@ -254,13 +254,13 @@ func Fatalln(args ...interface{}) {
 }
 
 func Println(args ...interface{}) {
-	var app Application
+	var app Group
 	var level LogLevel
 	app, level, args = std.split(args)
 	_ = std.Output(2, app, level, fmt.Sprintln(args...))
 }
 
-func Output(calldepth int, app Application, level LogLevel, s string) error {
+func Output(calldepth int, app Group, level LogLevel, s string) error {
 	return std.Output(calldepth+1, app, level, s)
 }
 

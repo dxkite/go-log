@@ -46,7 +46,11 @@ func NewTextWriter(w io.Writer) io.Writer {
 func NewJsonWriter(w io.Writer) io.Writer {
 	return NewWriter(w, func(m *LogMessage) ([]byte, error) {
 		m.File = filepath.Base(m.File)
-		return json.Marshal(m)
+		if b, er := json.Marshal(m); er != nil {
+			return nil, er
+		} else {
+			return []byte(string(b) + "\n"), nil
+		}
 	})
 }
 
