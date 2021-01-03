@@ -2,6 +2,8 @@
 
 package log
 
+import "fmt"
+
 func (w *colorWriter) ColorWrite(level LogLevel, msg []byte) (int, error) {
 	var tpl = "%s"
 	switch level {
