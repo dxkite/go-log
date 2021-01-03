@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path/filepath"
 )
 
 type LogMarshaler func(m *LogMessage) ([]byte, error)
@@ -44,6 +45,7 @@ func NewTextWriter(w io.Writer) io.Writer {
 
 func NewJsonWriter(w io.Writer) io.Writer {
 	return NewWriter(w, func(m *LogMessage) ([]byte, error) {
+		m.File = filepath.Base(m.File)
 		return json.Marshal(m)
 	})
 }
@@ -53,7 +55,8 @@ const TimeFormat = "2006-01-02 15:04:05.000"
 func TextMarshaler(m *LogMessage) ([]byte, error) {
 	var msg string
 	if len(m.File) > 0 {
-		msg = fmt.Sprintf("%s [%-5s] %s:%d %s", m.Time.Format(TimeFormat), m.Level, m.File, m.Line, m.Message)
+		f := filepath.Base(m.File)
+		msg = fmt.Sprintf("%s [%-5s] %s:%d %s", m.Time.Format(TimeFormat), m.Level, f, m.Line, m.Message)
 	} else {
 		msg = fmt.Sprintf("%s [%-5s] %s", m.Time.Format(TimeFormat), m.Level, m.Message)
 	}

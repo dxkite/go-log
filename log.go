@@ -230,7 +230,7 @@ func (l LogLevel) String() string {
 	return fmt.Sprintf("Level-%2d", int(l))
 }
 
-var std = New(os.Stdout, false)
+var std = New(NewTextWriter(os.Stdout), true)
 
 func Error(args ...interface{}) {
 	_ = std.levelOutput(Lerror, args)
