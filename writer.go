@@ -66,3 +66,42 @@ func TextMarshaler(m *LogMessage) ([]byte, error) {
 	}
 	return []byte(msg), nil
 }
+
+func MultiWriter(writers ...io.Writer) io.Writer {
+	allWriters := make([]io.Writer, 0, len(writers))
+	for _, w := range writers {
+		if mw, ok := w.(*multiWriter); ok {
+			allWriters = append(allWriters, mw.writers...)
+		} else {
+			allWriters = append(allWriters, w)
+		}
+	}
+	return &multiWriter{allWriters}
+}
+
+type multiWriter struct {
+	writers []io.Writer
+}
+
+func (t *multiWriter) WriteLogMessage(m *LogMessage) error {
+	for _, w := range t.writers {
+		if vv, ok := w.(LogMessageWriter); ok {
+			_ = vv.WriteLogMessage(m)
+		} else {
+			_, _ = w.Write(m.marshal())
+		}
+	}
+	return nil
+}
+
+func (t *multiWriter) Write(p []byte) (n int, err error) {
+	m := new(LogMessage)
+	if er := m.unmarshal(bytes.NewBuffer(p)); er != nil {
+		for _, w := range t.writers {
+			_, _ = w.Write(m.marshal())
+		}
+	} else {
+		return len(p), t.WriteLogMessage(m)
+	}
+	return len(p), nil
+}

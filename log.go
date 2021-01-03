@@ -28,10 +28,35 @@ type LogMessageWriter interface {
 	WriteLogMessage(msg *LogMessage) error
 }
 
+type LogLevel int
+
+const (
+	Lerror LogLevel = iota
+	Lwarn
+	Linfo
+	Ldebug
+	LMaxLevel
+)
+
+var levelMap = map[LogLevel]string{
+	Lerror: "ERROR",
+	Lwarn:  "WARN",
+	Linfo:  "INFO",
+	Ldebug: "DEBUG",
+}
+
+func (l LogLevel) String() string {
+	if v, ok := levelMap[l]; ok {
+		return v
+	}
+	return fmt.Sprintf("Level-%2d", int(l))
+}
+
 type Logger struct {
 	mu     sync.Mutex
 	out    io.Writer
 	caller bool
+	level  LogLevel
 }
 
 func New(w io.Writer, caller bool) *Logger {
@@ -39,6 +64,7 @@ func New(w io.Writer, caller bool) *Logger {
 		mu:     sync.Mutex{},
 		out:    w,
 		caller: caller,
+		level:  LMaxLevel,
 	}
 }
 
@@ -46,6 +72,12 @@ func (l *Logger) SetOutput(w io.Writer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.out = w
+}
+
+func (l *Logger) SetLevel(lv LogLevel) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.level = lv
 }
 
 func (l *Logger) Writer() (w io.Writer) {
@@ -115,6 +147,10 @@ func (l *Logger) Fatalln(args ...interface{}) {
 }
 
 func (l *Logger) Output(calldepth int, group Group, level LogLevel, s string) error {
+	// 日志过滤
+	if level > l.level {
+		return nil
+	}
 	now := time.Now()
 	var file string
 	var line int
@@ -207,29 +243,6 @@ func (m *LogMessage) unmarshal(r io.Reader) error {
 	return nil
 }
 
-type LogLevel int
-
-const (
-	Lerror LogLevel = iota
-	Lwarn
-	Linfo
-	Ldebug
-)
-
-var levelMap = map[LogLevel]string{
-	Lerror: "ERROR",
-	Lwarn:  "WARN",
-	Linfo:  "INFO",
-	Ldebug: "DEBUG",
-}
-
-func (l LogLevel) String() string {
-	if v, ok := levelMap[l]; ok {
-		return v
-	}
-	return fmt.Sprintf("Level-%2d", int(l))
-}
-
 var std = New(NewTextWriter(os.Stdout), true)
 
 func Error(args ...interface{}) {
@@ -270,6 +283,10 @@ func SetOutput(w io.Writer) {
 
 func SetLogCaller(b bool) {
 	std.SetLogCaller(b)
+}
+
+func SetLevel(lv LogLevel) {
+	std.SetLevel(lv)
 }
 
 func Writer() (w io.Writer) {
