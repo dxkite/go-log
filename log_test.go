@@ -23,6 +23,7 @@ func TestNew(t *testing.T) {
 	log.Warn(Group("user"), "user info", "some", 1, "@", "11")
 	fmt.Println("\ntext logger")
 	SetOutput(NewColorWriter())
+	SetLogCaller(false)
 	Warn("user info", "some", 1, "@", "11")
 	Error(Group("user"), "user info", "some", 1, "@", "11")
 	_ = Output(1, "app", Linfo, "message\n")

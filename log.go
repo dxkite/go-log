@@ -237,9 +237,15 @@ func (m *LogMessage) unmarshal(r io.Reader) error {
 	if _, er := io.ReadFull(r, txt); er != nil {
 		return er
 	}
-	m.Group = Group(txt[:al])
-	m.File = string(txt[al : uint16(al)+fl])
-	m.Message = string(txt[uint16(al)+fl:])
+	if al > 0 {
+		m.Group = Group(txt[:al])
+	}
+	if fl > 0 {
+		m.File = string(txt[al : uint16(al)+fl])
+	}
+	if ml > 0 {
+		m.Message = string(txt[uint16(al)+fl:])
+	}
 	return nil
 }
 
@@ -295,6 +301,6 @@ func Writer() (w io.Writer) {
 
 func w(err error) {
 	if err != nil {
-		fmt.Println("log write error", err)
+		fmt.Println("log.w error:", err)
 	}
 }

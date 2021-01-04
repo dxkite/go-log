@@ -45,7 +45,9 @@ func NewTextWriter(w io.Writer) io.Writer {
 
 func NewJsonWriter(w io.Writer) io.Writer {
 	return NewWriter(w, func(m *LogMessage) ([]byte, error) {
-		m.File = filepath.Base(m.File)
+		if len(m.File) > 0 {
+			m.File = filepath.Base(m.File)
+		}
 		if b, er := json.Marshal(m); er != nil {
 			return nil, er
 		} else {
@@ -101,7 +103,9 @@ func (t *multiWriter) Write(p []byte) (n int, err error) {
 	m := new(LogMessage)
 	if er := m.unmarshal(bytes.NewBuffer(p)); er != nil {
 		for _, w := range t.writers {
-			_, err = w.Write(m.marshal())
+			if _, err = w.Write(m.marshal()); err != nil {
+				return 0, err
+			}
 		}
 	} else {
 		return len(p), t.WriteLogMessage(m)

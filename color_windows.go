@@ -23,7 +23,7 @@ func init() {
 	procSetConsoleMode = kernel32.NewProc("SetConsoleMode")
 	handle, err := syscall.Open("CONOUT$", syscall.O_RDWR, 0)
 	if err != nil {
-		Warn("open CONOUT$ error")
+		Warn("open CONOUT$ error", err)
 		return
 	}
 	var mode uint32
