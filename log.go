@@ -120,29 +120,29 @@ func (l *Logger) levelOutput(level LogLevel, args []interface{}) error {
 }
 
 func (l *Logger) Error(args ...interface{}) {
-	_ = l.levelOutput(Lerror, args)
+	w(l.levelOutput(Lerror, args))
 }
 func (l *Logger) Warn(args ...interface{}) {
-	_ = l.levelOutput(Lwarn, args)
+	w(l.levelOutput(Lwarn, args))
 }
 
 func (l *Logger) Info(args ...interface{}) {
-	_ = l.levelOutput(Linfo, args)
+	w(l.levelOutput(Linfo, args))
 }
 
 func (l *Logger) Debug(args ...interface{}) {
-	_ = l.levelOutput(Ldebug, args)
+	w(l.levelOutput(Ldebug, args))
 }
 
 func (l *Logger) Println(args ...interface{}) {
 	var group Group
 	var level LogLevel
 	group, level, args = l.split(args)
-	_ = l.Output(2, group, level, fmt.Sprintln(args...))
+	w(l.Output(2, group, level, fmt.Sprintln(args...)))
 }
 
 func (l *Logger) Fatalln(args ...interface{}) {
-	_ = l.levelOutput(Lerror, args)
+	w(l.levelOutput(Lerror, args))
 	os.Exit(1)
 }
 
@@ -246,23 +246,23 @@ func (m *LogMessage) unmarshal(r io.Reader) error {
 var std = New(NewTextWriter(os.Stdout), true)
 
 func Error(args ...interface{}) {
-	_ = std.levelOutput(Lerror, args)
+	w(std.levelOutput(Lerror, args))
 }
 
 func Warn(args ...interface{}) {
-	_ = std.levelOutput(Lwarn, args)
+	w(std.levelOutput(Lwarn, args))
 }
 
 func Info(args ...interface{}) {
-	_ = std.levelOutput(Linfo, args)
+	w(std.levelOutput(Linfo, args))
 }
 
 func Debug(args ...interface{}) {
-	_ = std.levelOutput(Ldebug, args)
+	w(std.levelOutput(Ldebug, args))
 }
 
 func Fatalln(args ...interface{}) {
-	_ = std.levelOutput(Lerror, args)
+	w(std.levelOutput(Lerror, args))
 	os.Exit(1)
 }
 
@@ -291,4 +291,10 @@ func SetLevel(lv LogLevel) {
 
 func Writer() (w io.Writer) {
 	return std.Writer()
+}
+
+func w(err error) {
+	if err != nil {
+		fmt.Println("log write error", err)
+	}
 }

@@ -83,25 +83,28 @@ type multiWriter struct {
 	writers []io.Writer
 }
 
-func (t *multiWriter) WriteLogMessage(m *LogMessage) error {
+func (t *multiWriter) WriteLogMessage(m *LogMessage) (err error) {
 	for _, w := range t.writers {
 		if vv, ok := w.(LogMessageWriter); ok {
-			_ = vv.WriteLogMessage(m)
+			err = vv.WriteLogMessage(m)
 		} else {
-			_, _ = w.Write(m.marshal())
+			_, err = w.Write(m.marshal())
+		}
+		if err != nil {
+			return err
 		}
 	}
-	return nil
+	return err
 }
 
 func (t *multiWriter) Write(p []byte) (n int, err error) {
 	m := new(LogMessage)
 	if er := m.unmarshal(bytes.NewBuffer(p)); er != nil {
 		for _, w := range t.writers {
-			_, _ = w.Write(m.marshal())
+			_, err = w.Write(m.marshal())
 		}
 	} else {
 		return len(p), t.WriteLogMessage(m)
 	}
-	return len(p), nil
+	return len(p), err
 }
