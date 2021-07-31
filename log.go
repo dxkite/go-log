@@ -57,6 +57,7 @@ type Logger struct {
 	out    io.Writer
 	caller bool
 	level  LogLevel
+	async  bool
 }
 
 func New(w io.Writer, caller bool) *Logger {
@@ -88,6 +89,12 @@ func (l *Logger) SetLogCaller(b bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.caller = b
+}
+
+func (l *Logger) SetAsync(b bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.async = b
 }
 
 func (l *Logger) split(args []interface{}) (Group, LogLevel, []interface{}) {
@@ -174,11 +181,25 @@ func (l *Logger) Output(calldepth int, group Group, level LogLevel, s string) er
 		Line:    line,
 		Message: s,
 	}
-	if vv, ok := l.out.(LogMessageWriter); ok {
-		return vv.WriteLogMessage(msg)
+
+	write := func() error {
+		if vv, ok := l.out.(LogMessageWriter); ok {
+			return vv.WriteLogMessage(msg)
+		}
+		_, err := l.out.Write(msg.marshal())
+		return err
 	}
-	_, err := l.out.Write(msg.marshal())
-	return err
+
+	if l.async {
+		go func() {
+			l.mu.Lock()
+			defer l.mu.Unlock()
+			_ = write()
+		}()
+		return nil
+	}
+
+	return write()
 }
 
 func (m *LogMessage) marshal() []byte {
@@ -293,6 +314,10 @@ func SetLogCaller(b bool) {
 
 func SetLevel(lv LogLevel) {
 	std.SetLevel(lv)
+}
+
+func SetAsync(b bool) {
+	std.SetAsync(b)
 }
 
 func Writer() (w io.Writer) {

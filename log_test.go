@@ -10,6 +10,7 @@ import (
 func TestNew(t *testing.T) {
 	w := io.MultiWriter(NewJsonWriter(os.Stdout))
 	log := New(w, true)
+	log.SetAsync(true)
 
 	fmt.Println("json logger")
 	if err := log.Output(1, "default", Linfo, "information\n"); err != nil {
