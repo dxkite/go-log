@@ -2,21 +2,19 @@ package log
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"io"
-	"path/filepath"
 )
 
 type LogMarshaler func(m *LogMessage) ([]byte, error)
 
 type writer struct {
-	w  io.Writer
-	fn LogMarshaler
+	w    io.Writer
+	fn   LogMarshaler
+	last *LogMessage
 }
 
 func NewWriter(w io.Writer, fn LogMarshaler) io.Writer {
-	return &writer{w, fn}
+	return &writer{w, fn, nil}
 }
 
 func (w *writer) WriteLogMessage(m *LogMessage) error {
@@ -44,29 +42,11 @@ func NewTextWriter(w io.Writer) io.Writer {
 }
 
 func NewJsonWriter(w io.Writer) io.Writer {
-	return NewWriter(w, func(m *LogMessage) ([]byte, error) {
-		if len(m.File) > 0 {
-			m.File = filepath.Base(m.File)
-		}
-		if b, er := json.Marshal(m); er != nil {
-			return nil, er
-		} else {
-			return []byte(string(b) + "\n"), nil
-		}
-	})
+	return NewWriter(w, JsonMarshaler)
 }
 
-const TimeFormat = "2006-01-02 15:04:05.000"
-
-func TextMarshaler(m *LogMessage) ([]byte, error) {
-	var msg string
-	if len(m.File) > 0 {
-		f := filepath.Base(m.File)
-		msg = fmt.Sprintf("%s [%-5s] %s:%d %s", m.Time.Format(TimeFormat), m.Level, f, m.Line, m.Message)
-	} else {
-		msg = fmt.Sprintf("%s [%-5s] %s", m.Time.Format(TimeFormat), m.Level, m.Message)
-	}
-	return []byte(msg), nil
+func NewColorWriter(w io.Writer) io.Writer {
+	return NewWriter(w, ColorMarshaler)
 }
 
 func MultiWriter(writers ...io.Writer) io.Writer {

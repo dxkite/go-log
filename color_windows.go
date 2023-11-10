@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package log
@@ -14,6 +15,8 @@ var (
 )
 
 const EnableVirtualTerminalProcessingMode uint32 = 0x4
+
+var colorEnable = true
 
 func init() {
 	colorEnable = false
