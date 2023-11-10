@@ -8,13 +8,12 @@ import (
 type LogMarshaler func(m *LogMessage) ([]byte, error)
 
 type writer struct {
-	w    io.Writer
-	fn   LogMarshaler
-	last *LogMessage
+	w  io.Writer
+	fn LogMarshaler
 }
 
 func NewWriter(w io.Writer, fn LogMarshaler) io.Writer {
-	return &writer{w, fn, nil}
+	return &writer{w, fn}
 }
 
 func (w *writer) WriteLogMessage(m *LogMessage) error {

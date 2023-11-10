@@ -30,6 +30,8 @@ type LogMessageWriter interface {
 
 type LogLevel int
 
+const LogDefaultMute = 3
+
 const (
 	Lerror LogLevel = iota
 	Lwarn
@@ -58,6 +60,10 @@ type Logger struct {
 	caller bool
 	level  LogLevel
 	async  bool
+	mute   int
+
+	lastMsg *LogMessage
+	lastCnt int
 }
 
 func New(w io.Writer, caller bool) *Logger {
@@ -66,6 +72,7 @@ func New(w io.Writer, caller bool) *Logger {
 		out:    w,
 		caller: caller,
 		level:  LMaxLevel,
+		mute:   LogDefaultMute,
 	}
 }
 
@@ -73,6 +80,12 @@ func (l *Logger) SetOutput(w io.Writer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.out = w
+}
+
+func (l *Logger) SetMute(m int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.mute = m
 }
 
 func (l *Logger) SetLevel(lv LogLevel) {
@@ -180,6 +193,17 @@ func (l *Logger) Output(calldepth int, group Group, level LogLevel, s string) er
 		File:    file,
 		Line:    line,
 		Message: s,
+	}
+
+	if sameMessage(l.lastMsg, msg) {
+		l.lastCnt++
+	} else {
+		l.lastCnt = 1
+		l.lastMsg = msg
+	}
+
+	if l.mute > 0 && l.lastCnt >= l.mute {
+		return nil
 	}
 
 	write := func() error {
@@ -328,4 +352,23 @@ func w(err error) {
 	if err != nil {
 		fmt.Println("log.w error:", err)
 	}
+}
+
+func sameMessage(a, b *LogMessage) bool {
+	if a == nil {
+		return false
+	}
+	if b == nil {
+		return false
+	}
+	if a.File != b.File {
+		return false
+	}
+	if a.Line != b.Line {
+		return false
+	}
+	if a.Message != b.Message {
+		return false
+	}
+	return true
 }

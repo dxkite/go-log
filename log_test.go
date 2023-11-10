@@ -29,5 +29,10 @@ func TestNew(t *testing.T) {
 	SetLogCaller(false)
 	Warn("user info", "some", 1, "@", "11")
 	Error(Group("user"), "user info", "some", 1, "@", "11")
+
+	for i := 0; i < 10; i++ {
+		Warn("user info", "some", 1, "@", "11")
+	}
+
 	_ = Output(1, "app", Linfo, "message\n")
 }
