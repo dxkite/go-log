@@ -10,12 +10,18 @@ const TimeFormat = "2006-01-02 15:04:05.000"
 
 func TextMarshaler(m *LogMessage) ([]byte, error) {
 	var msg string
+	msg += m.Time.Format(TimeFormat) + " "
+
+	if len(string(m.Group)) > 0 {
+		msg += "[" + string(m.Group) + "] "
+	}
+
 	if len(m.File) > 0 {
 		f := filepath.Base(m.File)
-		msg = fmt.Sprintf("%s [%-5s] %s:%d %s", m.Time.Format(TimeFormat), m.Level, f, m.Line, m.Message)
-	} else {
-		msg = fmt.Sprintf("%s [%-5s] %s", m.Time.Format(TimeFormat), m.Level, m.Message)
+		msg += fmt.Sprintf("%s:%d ", f, m.Line)
 	}
+
+	msg += m.Message
 	return []byte(msg), nil
 }
 
