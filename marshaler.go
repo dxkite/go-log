@@ -8,6 +8,8 @@ import (
 
 const TimeFormat = "2006-01-02 15:04:05.000"
 
+var colorEnable = true
+
 func TextMarshaler(m *LogMessage) ([]byte, error) {
 	var msg string
 	msg += m.Time.Format(TimeFormat) + " "

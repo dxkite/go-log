@@ -16,8 +16,6 @@ var (
 
 const EnableVirtualTerminalProcessingMode uint32 = 0x4
 
-var colorEnable = true
-
 func init() {
 	colorEnable = false
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
